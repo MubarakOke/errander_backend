@@ -5,6 +5,15 @@ name = "pypi"
 
 [packages]
 django = "==3.2"
+djangorestframework = "*"
+djangorestframework-simplejwt = "*"
+django-cors-headers = "*"
+django-cloudinary-storage = "*"
+cloudinary = "*"
+django-channels = "*"
+python-dotenv = "*"
+psycopg2 = "*"
+pillow = "*"
 
 [dev-packages]
 
