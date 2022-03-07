@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'accounts',
     'operations',
+    'blog',
 ]
 
 MIDDLEWARE = [
@@ -126,7 +127,7 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
 
-DATE_INPUT_FORMATS = ('%d-%m-%Y', '%d/%m/%Y') 
+DATE_INPUT_FORMATS = ('%y-%m-%d', '%y/%m/%d') 
 
 USE_I18N = True
 

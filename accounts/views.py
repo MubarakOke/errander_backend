@@ -40,38 +40,30 @@ class AuthenticateView(APIView):
                 token= get_tokens_for_user(user)
                 if user.user_type == 'Customer':
                     return Response({
-                                    "refresh": token["refresh"], 
-                                    "access_token": token["access"],
+                                    "token": token["access"],
                                     "user": UserSerializer(user).data,
                                     # "picture": user.customer.picture,                                          
                                     }, status=201)
                 elif user.user_type== 'Errander':
                     return Response({
-                                    "refresh": token["refresh"], 
-                                    "access_token": token["access"],
+                                    "token": token["access"],
                                     "user": UserSerializer(user).data,
                                     "lga": user.errander.lga,
                                     "city": user.errander.city,
-                                    "gender": user.errander.gender,
-                                    "date_of_birth": user.errander.date_of_birth,
-                                    "education_qualification": user.errander.education_qualification,
-                                    "internet_usage": user.errander.internet_usage,
-                                    "skill": user.errander.skill,
-                                    "deadline_handling": user.errander.deadline_handling,
-                                    "project": user.errander.project,
-                                    "expectation": user.errander.expectation,
-                                    "relevant_information": user.errander.relevant_information,
-                                    "interest": user.errander.interest,
-                                    "familiar_location": user.errander.familiar_location,
                                     # "picture": user.errander.picture,
                                     "is_verified": user.errander.is_verified,
+                                    "active": user.errander.active,
                                     }, status=200)
                 elif user.user_type == 'Admin':
                     return Response({
-                                    "refresh": token["refresh"], 
-                                    "access_token": token["access"],
+                                    "token": token["access"],
                                     "user": UserSerializer(user).data,                                        
                                     }, status=200)
+                elif user.user_type == 'Blogger':
+                    return Response({
+                                    "token": token["access"],
+                                    "user": UserSerializer(user).data,                                         
+                                    }, status=201)
                 else:
                     Response({"error":"Unknown user"}, status=400)
 
