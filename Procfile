@@ -1,1 +1,1 @@
-web: daphne errander.asgi
+web: daphne errander.asgi:application
