@@ -33,7 +33,8 @@ AUTH_USER_MODEL = 'accounts.User'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (os.environ.get('DEBUG_VALUE') == 'True')
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1', 'errander.herokuapp.com']
+
 
 
 # Application definition
@@ -54,6 +55,10 @@ INSTALLED_APPS = [
     'accounts',
     'operations',
     'blog',
+]
+
+CORS_ALLOWED_ORIGINS= [
+    "http://localhost:3000"
 ]
 
 MIDDLEWARE = [
