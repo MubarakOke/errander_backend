@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+import django_heroku
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -24,15 +25,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-s1+)-$+2=_=*0s3vo@yvz@gagme9e=^_@34cc88rku*$9f3g#!'
+SECRET_KEY = os.environ.get('SECRET_KEY')  #'django-insecure-s1+)-$+2=_=*0s3vo@yvz@gagme9e=^_@34cc88rku*$9f3g#!'
 
 # Overriding user model
 AUTH_USER_MODEL = 'accounts.User'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG =  os.environ.get('DEBUG_VALUE', 'True')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 # Application definition
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.staticfiles',
     'cloudinary_storage',
     'rest_framework',
@@ -207,6 +209,7 @@ EMAIL_HOST_PASSWORD = 'dhbidtyctjzuadhs' # os.environ.get('EMAIL_HOST_PASSWORD')
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
@@ -218,7 +221,17 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [os.environ.get('REDIS_URL', 'redis://localhost:6379')],
         },
     },
 }
+
+# cloudinary set up
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME' : os.environ.get('CLOUD_NAME'),
+    'API_KEY' : os.environ.get('API_KEY'),
+    'API_SECRET' : os.environ.get('API_SECRET')
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+django_heroku.settings(locals())

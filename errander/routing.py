@@ -5,5 +5,4 @@ from operations.consumer import LocationConsumer
 
 websocket_urlpatterns = [
     re_path(r'^order/(?P<id>\d+)/$', LocationConsumer.as_asgi()),
-   # path('order/<int:id>', LocationConsumer.as_asgi())
 ]
