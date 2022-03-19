@@ -68,6 +68,3 @@ class User(AbstractBaseUser):
     @property
     def is_staff(self):
         return self.is_admin
-
-    class Meta:
-        constraints= [models.UniqueConstraint(fields=['email', 'user_type'], name="unique user")]
