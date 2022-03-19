@@ -45,7 +45,7 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError({"details":"Email already exist"})
+            raise serializers.ValidationError(["Email already exist"])
         return value
 
     def get_token(self, obj):
@@ -172,7 +172,7 @@ class ErranderCreateSerializer(serializers.ModelSerializer):
                 ]
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError({"details":"Email already exist"})
+            raise serializers.ValidationError(["Email already exist"])
         return value
     
     def get_token(self, obj):
@@ -189,6 +189,7 @@ class ErranderCreateSerializer(serializers.ModelSerializer):
                                     phone= validated_data.pop('phone', None)
                                     )
         user_obj.user_type= "Errander"
+        user_obj.set_unusable_password()
         user_obj.save()
 
         errander_obj = Errander.objects.create(user=user_obj,

@@ -1,25 +1,38 @@
 from accounts.views import AuthenticateView
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
-from . import serializers
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.conf import settings
+from datetime import date, datetime
+from datetime import timedelta
+from threading import Thread
+
 from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView, CreateAPIView
 from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 import jwt
 
-
-from rest_framework.permissions import IsAuthenticated
 from accounts.permissions import SuperuserPermissionOnly, CreatePermissionOnly, OrderCreatorOrUpdatePermission, UpdatePermissionOnly
 from operations.models import Customer, Errander, Order, Stock
+from . import serializers
 
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.conf import settings
-from datetime import date, datetime
-from datetime import timedelta
+# Email sending on another thread
+class EmailThread(Thread):
+    def __init__(self, subject, message, from_email, recipient_list, fail_silently):
+        self.subject= subject
+        self.message= message
+        self.from_email= from_email
+        self.recipient_list= recipient_list
+        self.fail_silently= fail_silently
+        Thread.__init__(self)
+        
+    def run(self):
+        send_mail(self.subject, self.message, self.from_email, self.recipient_list, self.fail_silently)
 
 User= get_user_model()
 
@@ -44,29 +57,33 @@ class CustomerCreateView(CreateAPIView):
         current_site= get_current_site(self.request).domain
         path= reverse("operations:Verify_Customer", kwargs={'token':token})
         url= f'https://{current_site}{path}'
-    
+        # Constructing email parameters
         subject= 'Verify your Email address'
-        message= f'Dear {customer_obj.user.first_name} \nWe are glad to have you on board, Click this link to verify your your email address \n{url}'
+        message= f'Dear {customer_obj.user.first_name}, \nWe are glad to have you on board, Click this link below to verify your your email address \n \n \n{url} \n \n \nPlease do not reply to this email. This email is not monitored'
         from_email= settings.EMAIL_HOST_USER
         recipient_list= [customer_obj.user.email]
         fail_silently=False
-        send_mail(
-            subject,
-            message,
-            from_email,
-            recipient_list,
-            fail_silently,
-        )
+        # Sending email on a new thread
+        email_thread= EmailThread(subject, message, from_email, recipient_list, fail_silently)
+        email_thread.start()
 class CustomerVerifyView(APIView):
+    permission_classes= []
     def get(self, request, *args, **kwargs):
         token= kwargs.get('token')
         try:
-            decode_token= jwt.decode(token, User)
+            decode_token= jwt.decode(jwt=token, key=settings.SECRET_KEY, algorithms=['HS256'])
             user_email= decode_token.get("user_id")
+            customer_obj= Customer.objects.get(user__email=user_email)
+            customer_obj.is_verified=True
+            customer_obj.save()
+            return Response({"details":"Email verified successfully"}, status=200)
         except jwt.exceptions.ExpiredSignatureError:
-            Response()
+            return Response({"details":"Token expired"}, status=401)
         except jwt.exceptions.DecodeError:
-            Response()
+            return Response({"details":"Token cannot be decoded"}, status=404)
+
+    
+
 # List Customer View
 class CustomerListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
@@ -108,7 +125,7 @@ class ErranderRequestedListView(ListAPIView):
     queryset= Errander.objects.filter(is_verified= False, is_declined=False, user__is_admin=False)
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
 
-
+# List Verified Errander view
 class ErranderVerifiedListView(ListAPIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     serializer_class= serializers.ErranderListSerializer
@@ -116,7 +133,7 @@ class ErranderVerifiedListView(ListAPIView):
     queryset= Errander.objects.filter(is_verified= True)
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
 
-
+# List Declined Errander View
 class ErranderDeclinedListView(ListAPIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     serializer_class= serializers.ErranderListSerializer
@@ -124,7 +141,7 @@ class ErranderDeclinedListView(ListAPIView):
     queryset= Errander.objects.filter(is_declined= True)
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
 
-
+# Detail Errander View
 class ErranderDetailView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     parser_classes = ( JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.ErranderUpdateSerializer
@@ -142,6 +159,7 @@ class ErranderDetailView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
+# Verify Errander View
 class ErranderVerifyView(APIView):
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
     authentication_classes= []
@@ -162,17 +180,12 @@ class ErranderVerifyView(APIView):
                     from_email= settings.EMAIL_HOST_USER
                     recipient_list= [user.email]
                     fail_silently=False
-                    send_mail(
-                        subject,
-                        message,
-                        from_email,
-                        recipient_list,
-                        fail_silently,
-                    )
                     errander_obj.is_verified= True
                     errander_obj.is_declined= False
                     user.save()
                     errander_obj.save()
+                    email_thread= EmailThread(subject, message, from_email, recipient_list, fail_silently)
+                    email_thread.start()
                     return Response({"detail": "Email sent successfully"}, status=200)
                 except:
                     user.set_unusable_password()
@@ -184,6 +197,7 @@ class ErranderVerifyView(APIView):
         except:
             return Response({"detail":"User with this id does not exist"}, status=404)
 
+# Decline Errander View
 class ErranderDeclineView(APIView):
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
     authentication_classes= []
@@ -202,7 +216,7 @@ class ErranderDeclineView(APIView):
         except:
             return Response({"detail":"User with this id does not exist"}, status=404)
 
-
+# Craete Order View
 class OrderCreateView(CreateAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderSerializer
@@ -212,7 +226,7 @@ class OrderCreateView(CreateAPIView):
         serializer.save(customer=self.request.user.customer)
 
 
-
+# List Initiated and Running Order View
 class OrderInitiatedandRunningListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderListSerializer
@@ -231,7 +245,7 @@ class OrderInitiatedandRunningListView(ListAPIView):
         except:
             return ""
 
-
+# List Completed Order View
 class OrderCompletedListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderListSerializer
@@ -250,6 +264,7 @@ class OrderCompletedListView(ListAPIView):
         except:
             return ""
 
+# List Running Order View 
 class OrderRunningListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderListSerializer
@@ -268,6 +283,7 @@ class OrderRunningListView(ListAPIView):
         except:
             return ""
 
+# Update Order View 
 class OrderUpdateView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderSerializer
@@ -278,6 +294,7 @@ class OrderUpdateView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     def perform_update(self, serializer):
         serializer.save(errander=self.request.user.errander)
 
+
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
     
@@ -285,9 +302,14 @@ class OrderUpdateView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
         return self.update(request, *args, kwargs)
 
     def delete(self, request, *args, **kwargs):
+        id= kwargs.get("id")
+        order_obj= Order.objects.get(id==id)
+        if (order_obj.status=="running"):
+            return Response({"details":"Order already started, it can't be cancelled"})
         return self.destroy(request, *args, **kwargs)
 
 
+# Admin Monitor Opperation View
 class MonitorOperationView(APIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     permission_classes= [] #IsAuthenticated&SuperuserPermissionOnly]
@@ -306,7 +328,7 @@ class MonitorOperationView(APIView):
                          'active_customer':serializers.CustomerListSerializer(active_customer, many=True).data}, status=200)
 
 
-
+# Admin History View
 class HistoryView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderListSerializer
