@@ -47,7 +47,8 @@ class User(AbstractBaseUser):
     email = models.EmailField(
         verbose_name='email address',
         max_length=255,
-        primary_key=True
+        primary_key=True,
+        unique=True
     )
     phone= models.CharField(max_length=15, blank=True, null=True)
     user_type= models.CharField(max_length=255, blank=True, null=True)

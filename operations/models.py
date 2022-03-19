@@ -18,6 +18,7 @@ def errander_image_location(instance, filename):
 class Customer(models.Model):  
     user= models.OneToOneField(User, blank=True, on_delete= models.CASCADE, related_name="customer")  
     picture= models.ImageField(upload_to=customer_image_location, blank=True, null=True)
+    is_verified= models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.user.last_name} {self.user.first_name}"

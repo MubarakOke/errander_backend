@@ -40,6 +40,7 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
                 'picture',
                 'password',
                 'token',
+                'is_verified',
                 ]
 
     def get_token(self, obj):
@@ -75,6 +76,7 @@ class CustomerListSerializer(serializers.ModelSerializer):
                 'id',
                 'user',
                 'picture',
+                'is_verified',
                 ]
 
 # Update Customer Serializer

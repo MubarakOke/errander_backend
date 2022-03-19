@@ -1,10 +1,15 @@
 from accounts.views import AuthenticateView
+from django.contrib.sites.shortcuts import get_current_site
+from django.urls import reverse
 from . import serializers
 from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView, CreateAPIView
 from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
+from rest_framework_simplejwt.tokens import RefreshToken
+import jwt
+
 
 from rest_framework.permissions import IsAuthenticated
 from accounts.permissions import SuperuserPermissionOnly, CreatePermissionOnly, OrderCreatorOrUpdatePermission, UpdatePermissionOnly
@@ -33,7 +38,35 @@ class CustomerCreateView(CreateAPIView):
     serializer_class= serializers.CustomerCreateSerializer
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
 
-
+    def perform_create(self, serializer):
+        customer_obj= serializer.save()
+        token= str(RefreshToken.for_user(customer_obj.user).access_token)
+        current_site= get_current_site(self.request).domain
+        path= reverse("operations:Verify_Customer", kwargs={'token':token})
+        url= f'https://{current_site}{path}'
+    
+        subject= 'Verify your Email address'
+        message= f'Dear {customer_obj.user.first_name} \nWe are glad to have you on board, Click this link to verify your your email address \n{url}'
+        from_email= settings.EMAIL_HOST_USER
+        recipient_list= [customer_obj.user.email]
+        fail_silently=False
+        send_mail(
+            subject,
+            message,
+            from_email,
+            recipient_list,
+            fail_silently,
+        )
+class CustomerVerifyView(APIView):
+    def get(self, request, *args, **kwargs):
+        token= kwargs.get('token')
+        try:
+            decode_token= jwt.decode(token, User)
+            user_email= decode_token.get("user_id")
+        except jwt.exceptions.ExpiredSignatureError:
+            Response()
+        except jwt.exceptions.DecodeError:
+            Response()
 # List Customer View
 class CustomerListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)

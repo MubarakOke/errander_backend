@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (MonitorOperationView, HistoryView,
-                    CustomerCreateView, CustomerListView, CustomerDetailView, 
+                    CustomerCreateView, CustomerListView, CustomerDetailView, CustomerVerifyView,
                     ErranderCreateView, ErranderRequestedListView, ErranderVerifiedListView, ErranderDeclinedListView, ErranderDetailView, ErranderVerifyView, ErranderDeclineView,
                     OrderCreateView, OrderUpdateView, OrderInitiatedandRunningListView, OrderCompletedListView, OrderRunningListView,
                     )
@@ -15,6 +15,7 @@ urlpatterns = [
     path('customer/', CustomerCreateView.as_view(), name='Create_Customer'),
     path('customer/list/', CustomerListView.as_view(), name='List_Customer'),
     path('customer/<int:id>/', CustomerDetailView.as_view(), name='Detail_Customer'),
+    path('customer/activate/<token>/', CustomerVerifyView.as_view(), name='Verify_Customer'),
     # Errander URL
     path('errander/', ErranderCreateView.as_view(), name='Create_Errander'),
     path('errander/requested/list/', ErranderRequestedListView.as_view(), name='List_Requested_Errander'),
