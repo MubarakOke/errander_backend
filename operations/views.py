@@ -66,6 +66,8 @@ class CustomerCreateView(CreateAPIView):
         # Sending email on a new thread
         email_thread= EmailThread(subject, message, from_email, recipient_list, fail_silently)
         email_thread.start()
+
+# Cutomer Verify API View
 class CustomerVerifyView(APIView):
     permission_classes= []
     def get(self, request, *args, **kwargs):
@@ -82,7 +84,6 @@ class CustomerVerifyView(APIView):
         except jwt.exceptions.DecodeError:
             return Response({"details":"Token cannot be decoded"}, status=404)
 
-    
 
 # List Customer View
 class CustomerListView(ListAPIView):
@@ -294,7 +295,6 @@ class OrderUpdateView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     def perform_update(self, serializer):
         serializer.save(errander=self.request.user.errander)
 
-
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
     
@@ -303,7 +303,7 @@ class OrderUpdateView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
 
     def delete(self, request, *args, **kwargs):
         id= kwargs.get("id")
-        order_obj= Order.objects.get(id==id)
+        order_obj= Order.objects.get(id=id)
         if (order_obj.status=="running"):
             return Response({"details":"Order already started, it can't be cancelled"})
         return self.destroy(request, *args, **kwargs)
