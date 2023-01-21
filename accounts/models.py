@@ -27,7 +27,7 @@ class MyUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password=None):
+    def create_superuser(self, email, password):
         user = self.create_user(
             first_name= "",
             last_name= "",
@@ -42,16 +42,16 @@ class MyUserManager(BaseUserManager):
 
 # User model
 class User(AbstractBaseUser):
-    first_name= models.CharField(max_length=255, blank=True, null=True)
-    last_name= models.CharField(max_length=255, blank=True, null=True)
+    first_name= models.CharField(max_length=255, blank=False, null=True)
+    last_name= models.CharField(max_length=255, blank=False, null=True)
+    middle_name= models.CharField(max_length=255, blank=False, null=True)
     email = models.EmailField(
         verbose_name='email address',
         max_length=255,
-        primary_key=True,
         unique=True
     )
-    phone= models.CharField(max_length=15, blank=True, null=True)
-    user_type= models.CharField(max_length=255, blank=True, null=True)
+    phone= models.CharField(max_length=15, blank=False, null=True)
+    user_type= models.CharField(max_length=255, blank=False, null=True)
     is_admin = models.BooleanField(default=False) # a superuser
 
     objects = MyUserManager()
@@ -68,3 +68,10 @@ class User(AbstractBaseUser):
     @property
     def is_staff(self):
         return self.is_admin
+
+    @property
+    def fullname(self):
+        fullname= f"{self.last_name} {self.first_name}"
+        if self.middle_name:
+            fullname += f" {self.middle_name}"
+        return fullname

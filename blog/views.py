@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from accounts.views import AuthenticateView
 from . import serializers
 from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView, CreateAPIView
 from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, DestroyModelMixin
@@ -67,7 +66,7 @@ class PostCreateView(CreateAPIView):
 # Detail Post View
 class PostDetailView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
-    serializer_class= serializers.PostSerializer
+    serializer_class= serializers.PostListPublishedSerializer
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
     queryset= Post.objects.all()
     lookup_field= 'id'
@@ -87,13 +86,15 @@ class PostListView(ListAPIView):
     serializer_class= serializers.PostListSerializer
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
     queryset= Post.objects.all().order_by('-timestamp')
+    search_fields= ("title", "date", "draft")
 
 # List Published Post View
 class PostPublishListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
-    serializer_class= serializers.PostListSerializer
+    serializer_class= serializers.PostListPublishedSerializer
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
     queryset= Post.objects.filter(draft=False).order_by('-timestamp')
+    search_fields= ("title", "date", "draft")
 
 
 # Comment views

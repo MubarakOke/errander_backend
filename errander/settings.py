@@ -30,6 +30,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY')  #'django-insecure-s1+)-$+2=_=*0s3vo@y
 # Overriding user model
 AUTH_USER_MODEL = 'accounts.User'
 
+SERVER= os.environ.get('SERVER')
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = (os.environ.get('DEBUG_VALUE') == 'True')
 
@@ -58,7 +60,8 @@ INSTALLED_APPS = [
 ]
 
 CORS_ALLOWED_ORIGINS= [
-    "http://localhost:3000"
+    "http://localhost:3001",
+    "http://localhost:3000", 
 ]
 
 MIDDLEWARE = [
@@ -99,10 +102,10 @@ WSGI_APPLICATION = 'errander.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ.get('NAME'),
-        'USER': os.environ.get('USER'),
-        'PASSWORD': os.environ.get('PASSWORD'),
-        'HOST': os.environ.get('HOST'), 
+        'NAME': os.environ.get('LNAME'),
+        'USER': os.environ.get('LUSER'),
+        'PASSWORD': os.environ.get('LPASSWORD'),
+        'HOST': os.environ.get('LHOST'), 
         'PORT': '5432'
     }
 }
@@ -160,7 +163,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',),
     'DEFAULT_RENDERER_CLASSES': DEFAULT_RENDERER_CLASSES,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 20,
+    'PAGE_SIZE': 13,
     'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.SearchFilter', 
                                 'rest_framework.filters.OrderingFilter'),
     'SEARCH_PARAM': 'q',
@@ -208,7 +211,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'hakeemolajuwon19@gmail.com' # os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = 'dhbidtyctjzuadhs' # os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_PASSWORD = 'ybdrkirflrqaylqd' # os.environ.get('EMAIL_HOST_PASSWORD')
 
 
 # Static files (CSS, JavaScript, Images)

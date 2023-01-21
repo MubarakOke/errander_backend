@@ -37,7 +37,7 @@ class UserChangeForm(forms.ModelForm):
     password = ReadOnlyPasswordHashField()
     class Meta:
         model = User
-        fields = ('email', 'password', 'first_name', 'last_name', 'phone',  'user_type', 'is_admin')
+        fields = ('email', 'password', 'first_name', 'last_name', 'middle_name', 'phone',  'user_type', 'is_admin')
 
 
 class UserAdmin(BaseUserAdmin):
@@ -47,11 +47,11 @@ class UserAdmin(BaseUserAdmin):
 
     # The fields to be used in displaying the User model.
 
-    list_display = ('email', 'first_name', 'last_name', 'phone', 'user_type', 'is_admin')
+    list_display = ('email', 'first_name', 'last_name', 'middle_name', 'phone', 'user_type', 'is_admin')
     list_filter = ('is_admin',)
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'phone', 'user_type')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'middle_name', 'phone', 'user_type')}),
         ('Permissions', {'fields': ('is_admin',)}),
     )
     # add_fieldsets is not a standard ModelAdmin attribute. UserAdmin

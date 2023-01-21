@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (MonitorOperationView, HistoryView,
-                    CustomerCreateView, CustomerListView, CustomerDetailView, CustomerVerifyView,
+                    CustomerCreateView, CustomerListView, CustomerDetailView,
                     ErranderCreateView, ErranderRequestedListView, ErranderVerifiedListView, ErranderDeclinedListView, ErranderDetailView, ErranderVerifyView, ErranderDeclineView,
                     OrderCreateView, OrderUpdateView, OrderInitiatedandRunningListView, OrderCompletedListView, OrderRunningListView,
                     )
@@ -12,12 +12,11 @@ urlpatterns = [
     path('admin/monitor/', MonitorOperationView.as_view(), name='Monitor_Admin'),
     path('admin/history/', HistoryView.as_view(), name='History_Admin'),
     # Customer URL
-    path('customer/', CustomerCreateView.as_view(), name='Create_Customer'),
+    path('customer/signup/', CustomerCreateView.as_view(), name='Create_Customer'),
     path('customer/list/', CustomerListView.as_view(), name='List_Customer'),
     path('customer/<int:id>/', CustomerDetailView.as_view(), name='Detail_Customer'),
-    path('customer/activate/<token>/', CustomerVerifyView.as_view(), name='Verify_Customer'),
     # Errander URL
-    path('errander/', ErranderCreateView.as_view(), name='Create_Errander'),
+    path('errander/signup/', ErranderCreateView.as_view(), name='Create_Errander'),
     path('errander/requested/list/', ErranderRequestedListView.as_view(), name='List_Requested_Errander'),
     path('errander/verified/list/', ErranderVerifiedListView.as_view(), name='List_Verified_Errander'),
     path('errander/declined/list/', ErranderDeclinedListView.as_view(), name='List_Declined_Errander'),

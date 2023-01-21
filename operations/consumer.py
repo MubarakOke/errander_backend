@@ -6,11 +6,11 @@ from channels.db import database_sync_to_async
 class LocationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         self.room= self.scope['url_route']['kwargs']['id']
-        self.room_name= f"order_{self.room}"
-        self.room_name= "order"
+        self.room_name= f"errander_{self.room}"
         await self.channel_layer.group_add(self.room_name, self.channel_name)
         await self.accept()
         print(f"{self.channel_name} don connect o")
+        print("room is", self.room_name)
     
     async def disconnet(self):
         await self.channel_layer.group_discard(self.room_name, self.channel_name)
