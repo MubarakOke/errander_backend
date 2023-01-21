@@ -1,4 +1,3 @@
-from accounts.views import AuthenticateView
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -17,8 +16,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 import jwt
 
-from accounts.permissions import SuperuserPermissionOnly, CreatePermissionOnly, OrderCreatorOrUpdatePermission, UpdatePermissionOnly
+from accounts.permissions import (SuperuserPermissionOnly, 
+                                  CreatePermissionOnly, 
+                                  OrderCreatorOrUpdatePermission, 
+                                  UpdatePermissionOnly,
+                                  CustomerObjectOwnerOrSuperUser,
+                                  ErranderObjectOwnerOrSuperUser)
 from operations.models import Customer, Errander, Order, Stock
+from .renderers import DefaultRenderer
 from . import serializers
 
 # Email sending on another thread
@@ -49,13 +54,14 @@ def generate_password():
 class CustomerCreateView(CreateAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.CustomerCreateSerializer
+    renderer_classes= [DefaultRenderer]
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
 
     def perform_create(self, serializer):
         customer_obj= serializer.save()
         token= str(RefreshToken.for_user(customer_obj.user).access_token)
         current_site= get_current_site(self.request).domain
-        path= reverse("operations:Verify_Customer", kwargs={'token':token})
+        path= reverse("accounts:Verify_Customer", kwargs={'token':token})
         url= f'https://{current_site}{path}'
         # Constructing email parameters
         subject= 'Verify your Email address'
@@ -70,6 +76,7 @@ class CustomerCreateView(CreateAPIView):
 # Cutomer Verify API View
 class CustomerVerifyView(APIView):
     permission_classes= []
+    renderer_classes= [DefaultRenderer]
     def get(self, request, *args, **kwargs):
         token= kwargs.get('token')
         try:
@@ -90,6 +97,7 @@ class CustomerListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.CustomerListSerializer
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
+    renderer_classes= [DefaultRenderer]
     queryset= Customer.objects.all()
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
 
@@ -97,7 +105,8 @@ class CustomerListView(ListAPIView):
 class CustomerDetailView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.CustomerUpdateSerializer
-    permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
+    permission_classes= [IsAuthenticated&CustomerObjectOwnerOrSuperUser]
+    renderer_classes= [DefaultRenderer]
     queryset= Customer.objects.all()
     lookup_field= 'id'
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
@@ -115,6 +124,7 @@ class CustomerDetailView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
 class ErranderCreateView(CreateAPIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     serializer_class= serializers.ErranderCreateSerializer
+    renderer_classes= [DefaultRenderer]
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
 
 
@@ -123,6 +133,7 @@ class ErranderRequestedListView(ListAPIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     serializer_class= serializers.ErranderListSerializer
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
+    renderer_classes= [DefaultRenderer]
     queryset= Errander.objects.filter(is_verified= False, is_declined=False, user__is_admin=False)
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
 
@@ -130,6 +141,7 @@ class ErranderRequestedListView(ListAPIView):
 class ErranderVerifiedListView(ListAPIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     serializer_class= serializers.ErranderListSerializer
+    renderer_classes= [DefaultRenderer]
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
     queryset= Errander.objects.filter(is_verified= True)
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
@@ -139,6 +151,7 @@ class ErranderDeclinedListView(ListAPIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
     serializer_class= serializers.ErranderListSerializer
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
+    renderer_classes= [DefaultRenderer]
     queryset= Errander.objects.filter(is_declined= True)
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
 
@@ -146,7 +159,8 @@ class ErranderDeclinedListView(ListAPIView):
 class ErranderDetailView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     parser_classes = ( JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.ErranderUpdateSerializer
-    permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
+    permission_classes= [IsAuthenticated&ErranderObjectOwnerOrSuperUser]
+    renderer_classes= [DefaultRenderer]
     queryset= Errander.objects.all()
     lookup_field= 'id'
     search_fields= ('user_email', 'user_first_name', 'user_last_name')
@@ -164,6 +178,7 @@ class ErranderDetailView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
 class ErranderVerifyView(APIView):
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
     authentication_classes= []
+    renderer_classes= [DefaultRenderer]
 
     def put(self, request, *args, **kwargs):
         id= kwargs.get('id', None)   
@@ -171,7 +186,8 @@ class ErranderVerifyView(APIView):
             errander_obj= Errander.objects.get(id=id)
             user= errander_obj.user
             if not user.has_usable_password():
-                password= generate_password() #generate password for user   
+                password= generate_password() #generate password for user  
+                print("password", password) 
                 user.set_password(password)
                 
                 #Send password via email
@@ -201,6 +217,7 @@ class ErranderVerifyView(APIView):
 # Decline Errander View
 class ErranderDeclineView(APIView):
     permission_classes= [] #[IsAuthenticated&SuperuserPermissionOnly]
+    renderer_classes= [DefaultRenderer]
     authentication_classes= []
 
     def put(self, request, *args, **kwargs):
@@ -221,6 +238,7 @@ class ErranderDeclineView(APIView):
 class OrderCreateView(CreateAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderSerializer
+    renderer_classes= [DefaultRenderer]
     permission_classes= [IsAuthenticated]
 
     def perform_create(self, serializer):
@@ -231,14 +249,17 @@ class OrderCreateView(CreateAPIView):
 class OrderInitiatedandRunningListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderListSerializer
+    renderer_classes= [DefaultRenderer]
     permission_classes= [IsAuthenticated]
+    queryset= Order.objects.all()
+
     def get_queryset(self):
         user=self.request.user
         try:
             if user.user_type=="Admin":
-                return Order.objects.all().exclude(status="completed").order_by('-timestamp')
+                return self.queryset.exclude(status="completed").order_by('-timestamp')
             elif user.user_type=="Errander":
-                return Order.objects.all().filter(status="initiated").order_by('-timestamp')
+                return self.queryset.filter(status="initiated").order_by('-timestamp')
             elif user.user_type=="Customer":
                 return user.customer.order.all().exclude(status="completed").order_by('-timestamp')
             else:
@@ -250,12 +271,15 @@ class OrderInitiatedandRunningListView(ListAPIView):
 class OrderCompletedListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderListSerializer
+    renderer_classes= [DefaultRenderer]
     permission_classes= [IsAuthenticated]
+    queryset= Order.objects.all()
+
     def get_queryset(self):
         user=self.request.user
         try:
             if user.user_type=="Admin":
-                return Order.objects.all().filter(status="completed").order_by('-timestamp')
+                return self.queryset.filter(status="completed").order_by('-timestamp')
             elif user.user_type=="Errander":
                 return user.errander.order.all().filter(status="completed").order_by('-timestamp')
             elif user.user_type=="Customer":
@@ -269,6 +293,7 @@ class OrderCompletedListView(ListAPIView):
 class OrderRunningListView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderListSerializer
+    renderer_classes= [DefaultRenderer]
     permission_classes= [IsAuthenticated]
     def get_queryset(self):
         user=self.request.user
@@ -289,6 +314,7 @@ class OrderUpdateView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderSerializer
     permission_classes= [OrderCreatorOrUpdatePermission&IsAuthenticated]
+    renderer_classes= [DefaultRenderer]
     queryset= Order.objects.all()
     lookup_field= 'id'
 
@@ -313,12 +339,13 @@ class OrderUpdateView(UpdateModelMixin, DestroyModelMixin, RetrieveAPIView):
 class MonitorOperationView(APIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     permission_classes= [] #IsAuthenticated&SuperuserPermissionOnly]
+    renderer_classes= [DefaultRenderer]
     def get(self, request, *args, **kwargs):
         active_errander= Errander.objects.filter(active=True).distinct() 
         active_errander_count= active_errander.count()
         completed_order= Order.objects.filter(date_completed=date.today(), status="completed")
         completed_order_count= completed_order.count()
-        active_customer= Customer.objects.filter(order__date_completed=date.today(), order__status="running").distinct()
+        active_customer= Customer.objects.filter(order__status="running").distinct()
         # completed_order= Order.objects.filter(date__gte=date.today()-timedelta(days=2), status="completed")
 
         
@@ -333,6 +360,7 @@ class HistoryView(ListAPIView):
     parser_classes = (JSONParser, MultiPartParser, FormParser)
     serializer_class= serializers.OrderListSerializer
     permission_classes= [] #IsAuthenticated]
+    renderer_classes= [DefaultRenderer]
     def get_queryset(self):
         if self.request.GET.get('date', None):
             date_param= self.request.GET.get('date')

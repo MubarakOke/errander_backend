@@ -22,26 +22,45 @@ class Customer(models.Model):
     
     def __str__(self):
         return f"{self.user.last_name} {self.user.first_name}"
+    
+    @property
+    def pictureURL(self):
+        if self.picture:
+            return self.picture.url
+        return None
 
-
+GENDER_CHOICES =(
+                ("MALE", "MALE"),
+                ("FEMALE", "FEMALE")
+                )
+EDUCATION_CHOICES =(
+                ("FIRST DEGREE", "FIRST DEGREE"),
+                ("HND", "HND"),
+                ("ND", "ND"),
+                ("WAEC", "WAEC")
+                )
+INTERNET_USAGE_CHOICES =(
+                ("YES", "YES"),
+                ("NO", "NO")
+                )
 # Errander model
 class Errander(models.Model):
     # Personal information fields
     user= models.OneToOneField(User, blank=True, on_delete= models.CASCADE, related_name="errander")
-    address= models.CharField(max_length=150, blank=True, null=True)
-    lga= models.CharField(max_length=150, blank=True, null=True)
-    city = models.CharField(max_length=150, blank=True, null=True)
-    gender= models.CharField(max_length=50, blank=True, null=True)
-    date_of_birth= models.DateField(blank=True, null=True)
-    education_qualification= models.CharField(max_length=150, blank=True, null=True)
-    internet_usage= models.CharField(max_length=50, blank=True, null=True)
-    skill= models.TextField(blank=True, null=True)
-    deadline_handling= models.TextField(blank=True, null=True)
-    project= models.TextField(blank=True, null=True)
-    expectation= models.TextField(blank=True, null=True)
-    relevant_information=models.TextField(blank=True, null=True)
-    interest= models.TextField(blank=True, null=True)
-    familiar_location=models.TextField(blank=True, null=True)
+    address= models.CharField(max_length=150, blank=False, null=True)
+    lga= models.CharField(max_length=150, blank=False, null=True)
+    city = models.CharField(max_length=150, blank=False, null=True)
+    gender= models.CharField(max_length=50, blank=False, null=True, choices=GENDER_CHOICES)
+    date_of_birth= models.DateField(blank=False, null=True)
+    education_qualification= models.CharField(max_length=150, blank=False, null=True, choices=EDUCATION_CHOICES)
+    internet_usage= models.CharField(max_length=50, blank=False, null=True, choices=INTERNET_USAGE_CHOICES)
+    skill= models.TextField(blank=False, null=True)
+    deadline_handling= models.TextField(blank=False, null=True)
+    project= models.TextField(blank=False, null=True)
+    expectation= models.TextField(blank=False, null=True)
+    relevant_information=models.TextField(blank=False, null=True)
+    interest= models.TextField(blank=False, null=True)
+    familiar_location=models.TextField(blank=False, null=True)
     picture= models.ImageField(upload_to=errander_image_location, blank=True, null=True)
     is_verified= models.BooleanField(default=False)
     is_declined= models.BooleanField(default=False)
@@ -50,6 +69,12 @@ class Errander(models.Model):
 
     def __str__(self):
         return f"{self.user.last_name} {self.user.first_name}"
+    
+    @property
+    def pictureURL(self):
+        if self.picture:
+            return self.picture.url
+        return None
 
 
 # Order model

@@ -6,7 +6,7 @@ class SuperuserPermissionOnly(permissions.BasePermission):
     """
     def has_permission(self, request, view):
         try:
-            return request.user.is_super_admin
+            return request.user.is_admin
         except AttributeError:
             return False
 
@@ -36,3 +36,15 @@ class OrderCreatorOrUpdatePermission(permissions.BasePermission):
             return request.user.is_admin or obj.customer.user == request.user or obj.errander.user==request.user or request.method=="PUT" or request.method=="PATCH"
         except:
             return request.user.is_admin or obj.customer.user == request.user or request.method=="PUT" or request.method=="PATCH"
+
+class CustomerObjectOwnerOrSuperUser(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_admin:
+            return True
+        return obj.id==request.user.customer.id
+
+class ErranderObjectOwnerOrSuperUser(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_admin:
+            return True
+        return obj.id==request.user.errander.id

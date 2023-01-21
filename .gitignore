@@ -13,7 +13,10 @@ config.prod.env
 __pycache__/
 *.py[cod]
 *$py.class
-
+blog/migrations/
+accounts/migrations/
+operations/migrations/
+.github/
 # C extensions
 *.so
 

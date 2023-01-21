@@ -4,5 +4,5 @@ from django.urls import path, re_path
 from operations.consumer import LocationConsumer
 
 websocket_urlpatterns = [
-    re_path(r'^order/(?P<id>\d+)/$', LocationConsumer.as_asgi()),
+    re_path(r'^errander/(?P<id>\d+)/$', LocationConsumer.as_asgi()),
 ]

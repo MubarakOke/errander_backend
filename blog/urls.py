@@ -13,8 +13,8 @@ urlpatterns = [
     path('blogger/<int:id>/', BloggerDetailView.as_view(), name='Detail_Blogger'),
     # post
     path('post/', PostCreateView.as_view(), name='Create_Post'),
-    path('post/list/', PostListView.as_view(), name='List_Post'),
-    path('post/publish/list/', PostPublishListView.as_view(), name='List_Published_Post'),
+    path('post-list/', PostListView.as_view(), name='List_Post'),
+    path('post-list/publish/', PostPublishListView.as_view(), name='List_Published_Post'),
     path('post/<int:id>/', PostDetailView.as_view(), name='Detail_Post'),
     # comment
     path('comment/', CommentCreateView.as_view(), name='Create_Comment'),

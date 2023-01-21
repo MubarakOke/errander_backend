@@ -2,6 +2,7 @@ from rest_framework import serializers
 from operations.models import Customer
 from accounts.serializers import UserSerializer
 from django.contrib.auth import get_user_model
+from django.db import IntegrityError
 from operations.models import Customer, Errander, Order, Stock
 from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -22,10 +23,11 @@ User = get_user_model()
 # Create Customer Serailizer
 class CustomerCreateSerializer(serializers.ModelSerializer):
     user= UserSerializer(read_only=True)
-    first_name= serializers.CharField(write_only=True, required=False)
-    last_name= serializers.CharField(write_only=True, required=False)
+    first_name= serializers.CharField(write_only=True, required=True)
+    last_name= serializers.CharField(write_only=True, required=True)
+    middle_name= serializers.CharField(write_only=True, required=False)
     email= serializers.EmailField(write_only=True, required=True)
-    phone= serializers.CharField(write_only=True, required=False)
+    phone= serializers.CharField(write_only=True, required=True)
     password= serializers.CharField(write_only=True, required=True)
     token= serializers.SerializerMethodField(read_only=True)
     class Meta:
@@ -35,6 +37,7 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
                 'user',
                 'first_name', 
                 'last_name',
+                'middle_name',
                 'email',
                 'phone',
                 'picture',
@@ -55,12 +58,16 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Create user object for admin instance
-        user_obj= User.objects.create(
-                                    first_name= validated_data.pop('first_name', None),
-                                    last_name= validated_data.pop('last_name', None),
-                                    email= validated_data.pop('email', None),
-                                    phone= validated_data.pop('phone', None)
-                                    )
+        try:
+            user_obj= User.objects.create(
+                                        first_name= validated_data.pop('first_name', None),
+                                        last_name= validated_data.pop('last_name', None),
+                                        middle_name= validated_data.pop('middle_name', None),
+                                        email= validated_data.pop('email', None),
+                                        phone= validated_data.pop('phone', None)
+                                        )
+        except IntegrityError:
+            raise serializers.ValidationError("user already exists")
         user_obj.user_type= "Customer"
         user_obj.set_password(validated_data.pop('password', None))
         user_obj.save()
@@ -76,6 +83,8 @@ class CustomerCreateSerializer(serializers.ModelSerializer):
 # List Customer Serializer
 class CustomerListSerializer(serializers.ModelSerializer):
     user= UserSerializer(read_only=True)
+    fullname= serializers.SerializerMethodField(read_only= True)
+
     class Meta:
         model= Customer
         fields= [
@@ -83,16 +92,19 @@ class CustomerListSerializer(serializers.ModelSerializer):
                 'user',
                 'picture',
                 'is_verified',
+                'fullname',
                 ]
+    def get_fullname(self, obj):
+        return obj.user.fullname
 
 # Update Customer Serializer
 class CustomerUpdateSerializer(serializers.ModelSerializer):
     user= UserSerializer(read_only=True)
     first_name= serializers.CharField(write_only=True, required=False)
     last_name= serializers.CharField(write_only=True, required=False)
-    email= serializers.EmailField(write_only=True, required=False)
+    middle_name= serializers.CharField(write_only=True, required=False)
     phone= serializers.CharField(write_only=True, required=False)
-    password= serializers.CharField(write_only=True, required=False)
+    fullname= serializers.SerializerMethodField(read_only= True)
     class Meta:
         model= Customer
         fields= [
@@ -100,18 +112,20 @@ class CustomerUpdateSerializer(serializers.ModelSerializer):
                 'user',
                 'first_name', 
                 'last_name',
-                'email',
+                'middle_name',
                 'phone',
                 'picture',
-                'password'
+                'fullname'
                 ]
+
+    def get_fullname(self, obj):
+        return obj.user.fullname
 
     def update(self, instance, validated_data):
         instance.user.first_name = validated_data.get('first_name', instance.user.first_name)
         instance.user.last_name= validated_data.get('last_name', instance.user.last_name)
-        instance.user.email= validated_data.get('email', instance.user.email)
+        instance.user.middle_name= validated_data.get('middle_name', instance.user.middle_name)
         instance.user.phone= validated_data.get('phone', instance.user.phone)
-        instance.user.set_password(validated_data.get('password', instance.user.password))
         instance.user.save()
         instance.picture= validated_data.get('picture', instance.picture)
         instance.save()
@@ -122,25 +136,59 @@ class CustomerUpdateSerializer(serializers.ModelSerializer):
 # Plain errander serializer
 class ErranderListSerializer(serializers.ModelSerializer):
     user= UserSerializer(read_only=True)
+    fullname= serializers.SerializerMethodField(read_only= True)
     class Meta:
         model= Errander
         fields= [
                 'id',
                 'user',
+                'address',
+                'lga',
+                'city',
+                'gender',
+                'date_of_birth',
+                'education_qualification',
+                'internet_usage',
+                'skill',
+                'deadline_handling',
+                'project',
+                'expectation',
+                'relevant_information',
+                'interest',
+                'familiar_location',
+                'picture',
                 'is_verified',
                 'is_declined',
                 'active',
+                'fullname',
                 ]
+    
+    def get_fullname(self, obj):
+        return obj.user.fullname
 
 # Create Errander Serializer
 class ErranderCreateSerializer(serializers.ModelSerializer):
     user= UserSerializer(read_only=True)
-    first_name= serializers.CharField(write_only=True, required=False)
-    last_name= serializers.CharField(write_only=True, required=False)
-    email= serializers.EmailField(write_only=True, required=True)
-    phone= serializers.CharField(write_only=True, required=False)
-    date_of_birth = serializers.DateField(input_formats=settings.DATE_INPUT_FORMATS, required=False)
+    first_name= serializers.CharField(write_only=True, required=True, trim_whitespace=True)
+    last_name= serializers.CharField(write_only=True, required=True, trim_whitespace=True)
+    middle_name= serializers.CharField(write_only=True, required=False, trim_whitespace=True)
+    email= serializers.EmailField(write_only=True, required=True, trim_whitespace=True)
+    phone= serializers.CharField(write_only=True, required=True)
+    date_of_birth = serializers.DateField(input_formats=settings.DATE_INPUT_FORMATS, required=True)
     token= serializers.SerializerMethodField(read_only=True)
+    lga= serializers.CharField(required=True)
+    gender= serializers.CharField(required=True)
+    address= serializers.CharField(required=True)
+    date_of_birth= serializers.CharField(required=True)
+    education_qualification= serializers.CharField(required=True)
+    internet_usage= serializers.CharField(required=True)
+    skill= serializers.CharField(required=True)
+    deadline_handling= serializers.CharField(required=True)
+    project= serializers.CharField(required=True)
+    expectation= serializers.CharField(required=True)
+    relevant_information= serializers.CharField(required=True)
+    interest= serializers.CharField(required=True)
+    familiar_location= serializers.CharField(required=True)
     class Meta:
         model= Errander
         fields= [
@@ -148,6 +196,7 @@ class ErranderCreateSerializer(serializers.ModelSerializer):
                 'user',
                 'first_name', 
                 'last_name',
+                'middle_name',
                 'email',
                 'phone',
                 'address',
@@ -170,6 +219,7 @@ class ErranderCreateSerializer(serializers.ModelSerializer):
                 'active',
                 'token',
                 ]
+
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError(["Email already exist"])
@@ -182,12 +232,17 @@ class ErranderCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Create user object for errander instance
-        user_obj= User.objects.create(
-                                    first_name= validated_data.pop('first_name', None),
-                                    last_name= validated_data.pop('last_name', None),
-                                    email= validated_data.pop('email', None),
-                                    phone= validated_data.pop('phone', None)
-                                    )
+        try:
+            user_obj= User.objects.create(
+                                        first_name= validated_data.pop('first_name', None),
+                                        last_name= validated_data.pop('last_name', None),
+                                        middle_name= validated_data.pop('middle_name', None),
+                                        email= validated_data.pop('email', None),
+                                        phone= validated_data.pop('phone', None)
+                                        )
+        except IntegrityError:
+            raise serializers.ValidationError("user already exists")
+
         user_obj.user_type= "Errander"
         user_obj.set_unusable_password()
         user_obj.save()
@@ -219,10 +274,11 @@ class ErranderUpdateSerializer(serializers.ModelSerializer):
     user= UserSerializer(read_only=True)
     first_name= serializers.CharField(write_only=True, required=False)
     last_name= serializers.CharField(write_only=True, required=False)
+    middle_name= serializers.CharField(write_only=True, required=False)
     email= serializers.EmailField(write_only=True, required=False)
     phone= serializers.CharField(write_only=True, required=False)
     date_of_birth = serializers.DateField(input_formats=settings.DATE_INPUT_FORMATS, required=False)
-    password= serializers.CharField(write_only=True, required=False)
+    fullname= serializers.SerializerMethodField(read_only= True)
     class Meta:
         model= Errander
         fields= [
@@ -230,6 +286,7 @@ class ErranderUpdateSerializer(serializers.ModelSerializer):
                 'user',
                 'first_name', 
                 'last_name',
+                'middle_name',
                 'email',
                 'phone',
                 'address',
@@ -247,18 +304,21 @@ class ErranderUpdateSerializer(serializers.ModelSerializer):
                 'interest',
                 'familiar_location',
                 'picture',
-                'password',
                 'is_verified',
                 'is_declined',
                 'active',
+                'fullname'
                 ]
+
+    def get_fullname(self, obj):
+        return obj.user.fullname
 
     def update(self, instance, validated_data):
         instance.user.first_name = validated_data.get('first_name', instance.user.first_name)
         instance.user.last_name= validated_data.get('last_name', instance.user.last_name)
+        instance.user.middle_name= validated_data.get('middle_name', instance.user.middle_name)
         instance.user.email= validated_data.get('email', instance.user.email)
         instance.user.phone= validated_data.get('phone', instance.user.phone)
-        instance.user.set_password(validated_data.get('password', instance.user.password))
         instance.user.save()  
         instance.picture= validated_data.get('picture', instance.picture)
         instance.save()
@@ -378,6 +438,8 @@ class OrderSerializer(serializers.ModelSerializer):
         if requested_errander.active:
             if not validated_data.get("status") == 'completed':
               raise serializers.ValidationError({"details":"You are currently busy, please finish up the task"})
+        if (instance.status == "running") and (validated_data.get("status")=="running") :
+            raise serializers.ValidationError({"details":"Order has already begun by another errander"})
         instance.errander= validated_data.get("errander", instance.errander)
         instance.status= validated_data.get("status", instance.status)
         if validated_data.get("status")=="running":
