@@ -10,10 +10,13 @@ djangorestframework-simplejwt = "*"
 django-cors-headers = "*"
 django-cloudinary-storage = "*"
 cloudinary = "*"
-django-channels = "*"
 python-dotenv = "*"
 psycopg2 = "*"
 pillow = "*"
+channels = "==3.0.4"
+django-heroku = "*"
+channels-redis = "*"
+daphne = "*"
 
 [dev-packages]
 

@@ -36,7 +36,7 @@ class MyUserManager(BaseUserManager):
             user_type= "Admin",
             password=password,    
         )
-        user.is_super_admin = True
+        user.is_admin = True
         user.save(using=self._db)
         return user
 
@@ -47,7 +47,8 @@ class User(AbstractBaseUser):
     email = models.EmailField(
         verbose_name='email address',
         max_length=255,
-        primary_key=True
+        primary_key=True,
+        unique=True
     )
     phone= models.CharField(max_length=15, blank=True, null=True)
     user_type= models.CharField(max_length=255, blank=True, null=True)
@@ -67,6 +68,3 @@ class User(AbstractBaseUser):
     @property
     def is_staff(self):
         return self.is_admin
-
-    class Meta:
-        constraints= [models.UniqueConstraint(fields=['email', 'user_type'], name="unique user")]
